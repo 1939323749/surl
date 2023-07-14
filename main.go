@@ -73,13 +73,22 @@ func CreateShortUrlHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing URL", http.StatusBadRequest)
 		return
 	}
-	shortUrl := genShortUrl(6)
-
 	collection := db.Collection("urls")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := collection.InsertOne(ctx, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl})
+	var existingMapping UrlMapping
+	err := collection.FindOne(ctx, bson.M{"longUrl": longUrl}).Decode(&existingMapping)
+	if err == nil {
+		jsonResponse, _ := json.Marshal(map[string]string{"shortUrl": existingMapping.ShortUrl})
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+		return
+	}
+
+	shortUrl := genShortUrl(6)
+
+	_, err = collection.InsertOne(ctx, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl})
 	if err != nil {
 		log.Printf("Error inserting short URL: %s", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
