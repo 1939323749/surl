@@ -32,4 +32,16 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, result.LongUrl, http.StatusSeeOther)
+
+	update := bson.M{
+		"$inc": bson.M{"clickCount": 1},
+	}
+
+	_, err = collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Printf("Error increasing click-count: %s", err)
+	}
+	//debug
+	//err = collection.FindOne(ctx, filter).Decode(&result)
+	//fmt.Println(result)
 }
