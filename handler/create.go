@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// CreateShortUrlHandler handle /create
 func CreateShortUrlHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -35,7 +36,7 @@ func CreateShortUrlHandler(w http.ResponseWriter, r *http.Request) {
 
 	shortUrl := genShortUrl(6)
 
-	_, err = collection.InsertOne(ctx, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl})
+	_, err = collection.InsertOne(ctx, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl, ClickCount: 0})
 	if err != nil {
 		log.Printf("Error inserting short URL: %s", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

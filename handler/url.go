@@ -3,8 +3,9 @@ package handler
 import "math/rand"
 
 type UrlMapping struct {
-	ShortUrl string `bson:"shortUrl"`
-	LongUrl  string `bson:"longUrl"`
+	ShortUrl   string `bson:"shortUrl"`
+	LongUrl    string `bson:"longUrl"`
+	ClickCount int    `bson:"clickCount"`
 }
 
 func genShortUrl(length int) string {
