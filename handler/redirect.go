@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -10,39 +12,48 @@ import (
 	"time"
 )
 
-// RedirectHandler handle /
-func RedirectHandler(w http.ResponseWriter, r *http.Request) {
-	shortUrl := r.URL.Path[1:]
-	if shortUrl == "create" {
-		return
-	}
-	collection := database.Db.Collection("urls")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+type ErrorResponse struct {
+	Status int    `json:"status"`
+	Error  string `json:"error"`
+}
 
-	filter := bson.M{"shortUrl": shortUrl}
-	var result UrlMapping
-	err := collection.FindOne(ctx, filter).Decode(&result)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			http.NotFound(w, r)
-			return
+func RedirectHandler(app *fiber.App) {
+	app.Get("/:shortUrl", func(ctx *fiber.Ctx) error {
+		shortUrl := ctx.Params("shortUrl")
+		fmt.Println(shortUrl)
+		collection := database.Db.Collection("urls")
+		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		filter := bson.M{"shortUrl": shortUrl}
+		var result UrlMapping
+		err := collection.FindOne(c, filter).Decode(&result)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				_, err := ctx.Writef("%s", http.StatusBadRequest)
+				if err != nil {
+					return err
+				}
+			}
+			return err
 		}
-		log.Printf("Error finding short URL: %s", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, result.LongUrl, http.StatusSeeOther)
+		err = ctx.Redirect(result.LongUrl, http.StatusSeeOther)
+		if err != nil {
+			return err
+		}
 
-	update := bson.M{
-		"$inc": bson.M{"clickCount": 1},
-	}
+		update := bson.M{
+			"$inc": bson.M{"clickCount": 1},
+		}
 
-	_, err = collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		log.Printf("Error increasing click-count: %s", err)
-	}
-	//debug
-	//err = collection.FindOne(ctx, filter).Decode(&result)
-	//fmt.Println(result)
+		_, err = collection.UpdateOne(c, filter, update)
+		if err != nil {
+			log.Printf("Error increasing click-count: %s", err)
+		}
+		_, err = ctx.Write([]byte(shortUrl))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
