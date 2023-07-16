@@ -71,6 +71,7 @@ func CreateShortUrlHandler(app *fiber.App) {
 		var msg []byte
 		if err == nil {
 			msg, err = jsoniter.Marshal(UrlMapping{ShortUrl: existingMapping.ShortUrl, LongUrl: existingMapping.LongUrl, ClickCount: existingMapping.ClickCount})
+			ctx.Status(http.StatusOK)
 			_, err := ctx.Writef(string(msg))
 			if err != nil {
 				return err
@@ -83,7 +84,8 @@ func CreateShortUrlHandler(app *fiber.App) {
 		_, err = collection.InsertOne(c, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl.Url, ClickCount: 0})
 		if err != nil {
 			log.Printf("Error inserting short URL: %s", err)
-			_, err := ctx.Writef("Internal server error", http.StatusInternalServerError)
+			ctx.Status(http.StatusInternalServerError)
+			_, err := ctx.Writef("%s", err)
 			if err != nil {
 				return err
 			}
@@ -93,6 +95,7 @@ func CreateShortUrlHandler(app *fiber.App) {
 		if err != nil {
 			return err
 		}
+		ctx.Status(http.StatusOK)
 		_, err = ctx.Writef(string(msg))
 		if err != nil {
 			return err

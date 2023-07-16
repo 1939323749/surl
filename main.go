@@ -48,6 +48,7 @@ func main() {
 
 	handler.RedirectHandler(app)
 	handler.CreateShortUrlHandler(app)
+	handler.ClickHandler(app)
 	err := app.Listen(":8080")
 	if err != nil {
 		os.Kill.Signal()

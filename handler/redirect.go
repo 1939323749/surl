@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-type ErrorResponse struct {
-	Status int    `json:"status"`
-	Error  string `json:"error"`
-}
-
 func RedirectHandler(app *fiber.App) {
 	app.Get("/:shortUrl", func(ctx *fiber.Ctx) error {
 		shortUrl := ctx.Params("shortUrl")
@@ -30,7 +25,8 @@ func RedirectHandler(app *fiber.App) {
 		err := collection.FindOne(c, filter).Decode(&result)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
-				_, err := ctx.Writef("%s", http.StatusBadRequest)
+				ctx.Status(http.StatusBadRequest)
+				_, err := ctx.Writef("%s", err)
 				if err != nil {
 					return err
 				}
