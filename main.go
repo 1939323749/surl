@@ -47,11 +47,9 @@ func main() {
 	}()
 
 	handler.RedirectHandler(app)
+	handler.CreateShortUrlHandler(app)
 	err := app.Listen(":8080")
 	if err != nil {
 		os.Kill.Signal()
 	}
-}
-func routerSetup(router fiber.Router) {
-
 }

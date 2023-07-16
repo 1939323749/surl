@@ -42,17 +42,15 @@ func RedirectHandler(app *fiber.App) {
 			return err
 		}
 
+		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		update := bson.M{
 			"$inc": bson.M{"clickCount": 1},
 		}
-
-		_, err = collection.UpdateOne(c, filter, update)
+		_, err = collection.UpdateOne(updateCtx, filter, update)
 		if err != nil {
 			log.Printf("Error increasing click-count: %s", err)
-		}
-		_, err = ctx.Write([]byte(shortUrl))
-		if err != nil {
-			return err
 		}
 		return nil
 	})

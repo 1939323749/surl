@@ -16,3 +16,7 @@ func genShortUrl(length int) string {
 	}
 	return string(result)
 }
+func validUrl(url string) bool {
+	//TODO
+	return url != ""
+}
