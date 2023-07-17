@@ -1,6 +1,9 @@
 package handler
 
-import "math/rand"
+import (
+	"math/rand"
+	URL "net/url"
+)
 
 type UrlMapping struct {
 	ShortUrl   string `bson:"shortUrl"`
@@ -16,7 +19,10 @@ func genShortUrl(length int) string {
 	}
 	return string(result)
 }
-func validUrl(url string) bool {
-	//TODO
-	return url != ""
+func ValidUrl(url string) bool {
+	_, err := URL.ParseRequestURI(url)
+	if err != nil {
+		return false
+	}
+	return true
 }
