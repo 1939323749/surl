@@ -12,17 +12,17 @@ import (
 	"time"
 )
 
-type shortUrl struct {
+type longUrl struct {
 	Url string `json:"url"`
 }
 
 func CreateShortUrlHandler(app *fiber.App) {
 	app.Post("/create", func(ctx *fiber.Ctx) error {
-		longUrl := new(shortUrl)
+		longUrl := new(longUrl)
 		if err := ctx.BodyParser(longUrl); err != nil {
 			return err
 		}
-		if !ValidUrl(longUrl.Url) {
+		if !validUrl(longUrl.Url) {
 			return fmt.Errorf("url can't be null")
 		}
 		collection := database.Db.Collection("urls")

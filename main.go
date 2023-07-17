@@ -39,7 +39,7 @@ func main() {
 		sigs := make(chan os.Signal)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		for range sigs {
-			logger.Warn("Received a termination signal, bark server shutdown...")
+			logger.Warn("Received a termination signal, server shutdown...")
 			if err := app.Shutdown(); err != nil {
 				logger.Errorf("Server forced to shutdown error: %v", err)
 			}
