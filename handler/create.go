@@ -22,7 +22,7 @@ func CreateShortUrlHandler(app *fiber.App) {
 		if err := ctx.BodyParser(longUrl); err != nil {
 			return err
 		}
-		if !validUrl(longUrl.Url) {
+		if !ValidUrl(longUrl.Url) {
 			return fmt.Errorf("url can't be null")
 		}
 		collection := database.Db.Collection("urls")
