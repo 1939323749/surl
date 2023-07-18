@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	jsoniter "github.com/json-iterator/go"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
 	"surl/database"
@@ -25,36 +25,30 @@ func CreateShortUrlHandler(app *fiber.App) {
 		if !validUrl(longUrl.Url) {
 			return fmt.Errorf("url can't be null")
 		}
-		collection := database.Db.Collection("urls")
-		c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
 
-		var existingMapping UrlMapping
-		err := collection.FindOne(c, bson.M{"longUrl": longUrl.Url}).Decode(&existingMapping)
-		var msg []byte
-		if err == nil {
-			msg, err = jsoniter.Marshal(UrlMapping{ShortUrl: existingMapping.ShortUrl, LongUrl: existingMapping.LongUrl, ClickCount: existingMapping.ClickCount})
-			ctx.Status(http.StatusOK)
-			_, err := ctx.Writef(string(msg))
+		shortUrl, err := database.RedisClient.Get(context.Background(), longUrl.Url).Result()
+		if err == redis.Nil {
+			shortUrl = genShortUrl(6)
+
+			err = database.RedisClient.Set(context.Background(), longUrl.Url, shortUrl, 0).Err()
 			if err != nil {
 				return err
 			}
-			return nil
-		}
 
-		shortUrl := genShortUrl(6)
-
-		_, err = collection.InsertOne(c, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl.Url, ClickCount: 0})
-		if err != nil {
-			log.Printf("Error inserting short URL: %s", err)
-			ctx.Status(http.StatusInternalServerError)
-			_, err := ctx.Writef("%s", err)
-			if err != nil {
-				return err
-			}
+			go func() {
+				collection := database.Db.Collection("urls")
+				c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_, err = collection.InsertOne(c, UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl.Url, ClickCount: 0})
+				if err != nil {
+					log.Printf("Error inserting short URL: %s", err)
+				}
+			}()
+		} else if err != nil {
 			return err
 		}
-		msg, err = jsoniter.Marshal(UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl.Url, ClickCount: 0})
+
+		msg, err := jsoniter.Marshal(UrlMapping{ShortUrl: shortUrl, LongUrl: longUrl.Url, ClickCount: 0})
 		if err != nil {
 			return err
 		}

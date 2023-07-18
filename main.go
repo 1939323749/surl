@@ -51,6 +51,7 @@ func main() {
 	handler.ClickHandler(app)
 	err := app.Listen(":8080")
 	if err != nil {
+		logger.Errorf("Server startup error: %v", err)
 		os.Kill.Signal()
 	}
 }

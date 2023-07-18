@@ -2,13 +2,17 @@ package database
 
 import (
 	"context"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
 
-var Db *mongo.Database
+var (
+	Db          *mongo.Database
+	RedisClient *redis.Client
+)
 
 type Database interface {
 	Connect()
@@ -27,4 +31,9 @@ func Connect() {
 		log.Fatal(err)
 	}
 	Db = client.Database("shorturl")
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "",
+		DB:       0,
+	})
 }
