@@ -2,10 +2,8 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"surl/database"
@@ -15,29 +13,40 @@ import (
 func RedirectHandler(app *fiber.App) {
 	app.Get("/:shortUrl", func(ctx *fiber.Ctx) error {
 		shortUrl := ctx.Params("shortUrl")
-		fmt.Println(shortUrl)
+		log.Printf("shortUrl: %s", shortUrl)
+		var longUrlValue = ""
+		var err error
+		longUrlValue, err = database.RedisClient.Get(context.Background(), shortUrl).Result()
+		if err == nil {
+			err = ctx.Redirect(longUrlValue, http.StatusSeeOther)
+			if err != nil {
+				log.Printf("Error redirecting: %s", err)
+			}
+		} else {
+			log.Printf("Error getting short URL: %s", err)
+		}
+
 		collection := database.Db.Collection("urls")
 		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		filter := bson.M{"shortUrl": shortUrl}
 		var result UrlMapping
-		err := collection.FindOne(c, filter).Decode(&result)
-		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				ctx.Status(http.StatusBadRequest)
-				_, err := ctx.Writef("%s", err)
-				if err != nil {
-					return err
-				}
+		err = collection.FindOne(c, filter).Decode(&result)
+		if result.LongUrl == "" {
+			return ctx.SendStatus(http.StatusNotFound)
+		} else {
+			err = ctx.Redirect(result.LongUrl, http.StatusSeeOther)
+			if err != nil {
+				log.Printf("Error redirecting: %s", err)
 			}
-			return err
 		}
-		err = ctx.Redirect(result.LongUrl, http.StatusSeeOther)
 		if err != nil {
-			return err
+			log.Printf("Error finding short URL: %s", err)
 		}
-
+		if longUrlValue == "" {
+			database.RedisClient.Set(context.Background(), shortUrl, result.LongUrl, 24*time.Hour)
+		}
 		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 

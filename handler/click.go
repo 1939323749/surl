@@ -24,15 +24,14 @@ func ClickHandler(app *fiber.App) {
 		err := collection.FindOne(c, filter).Decode(&result)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
+				log.Printf("Error finding short URL: %s", err)
 				return err
 			}
-			log.Printf("Error finding short URL: %s", err)
 			ctx.Status(http.StatusInternalServerError)
 			_, err = ctx.Writef("Error finding short URL: %s", err)
 			if err != nil {
 				return err
 			}
-			return err
 		}
 		ctx.Status(http.StatusOK)
 		msg, _ := jsoniter.Marshal(UrlMapping{ShortUrl: result.ShortUrl, LongUrl: result.LongUrl, ClickCount: result.ClickCount})

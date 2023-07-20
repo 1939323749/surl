@@ -19,7 +19,11 @@ type CommonResp struct {
 }
 
 func main() {
-	database.Connect()
+	err := database.Connect()
+	if err != nil {
+		logger.Fatal(err)
+		return
+	}
 	app := fiber.New(fiber.Config{
 		JSONEncoder: jsoniter.Marshal,
 		Network:     "tcp",
@@ -49,7 +53,7 @@ func main() {
 	handler.RedirectHandler(app)
 	handler.CreateShortUrlHandler(app)
 	handler.ClickHandler(app)
-	err := app.Listen(":8080")
+	err = app.Listen(":8080")
 	if err != nil {
 		logger.Errorf("Server startup error: %v", err)
 		os.Kill.Signal()
