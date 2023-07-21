@@ -47,7 +47,7 @@ func CreateShortUrlHandler(app *fiber.App) {
 		}
 		shortUrl := genShortUrl(6)
 		if result.ShortUrl == "" {
-			ctx.Status(http.StatusOK)
+			ctx.Status(http.StatusCreated)
 			_, err = collection.InsertOne(c, UrlMapping{ShortUrl: shortUrl, LongUrl: reqBody.Url, ClickCount: 0})
 			if err != nil {
 				log.Printf("Error inserting short URL: %s", err)
