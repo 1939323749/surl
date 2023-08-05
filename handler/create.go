@@ -53,11 +53,6 @@ func CreateShortUrlHandler(app *fiber.App) {
 				log.Printf("Error inserting short URL: %s", err)
 				return err
 			}
-			status := database.RedisClient.Set(c, shortUrl, reqBody.Url, 24*time.Hour)
-			if status.Err() != nil {
-				log.Printf("Error inserting short URL: %s", err)
-				return err
-			}
 			msg, err := jsoniter.Marshal(UrlMapping{ShortUrl: shortUrl, LongUrl: reqBody.Url, ClickCount: result.ClickCount})
 			if err != nil {
 				return err

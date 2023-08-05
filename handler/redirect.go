@@ -14,25 +14,13 @@ func RedirectHandler(app *fiber.App) {
 	app.Get("/:shortUrl", func(ctx *fiber.Ctx) error {
 		shortUrl := ctx.Params("shortUrl")
 		log.Printf("shortUrl: %s", shortUrl)
-		var longUrlValue = ""
-		var err error
-		longUrlValue, err = database.RedisClient.Get(context.Background(), shortUrl).Result()
-		if err == nil {
-			err = ctx.Redirect(longUrlValue, http.StatusSeeOther)
-			if err != nil {
-				log.Printf("Error redirecting: %s", err)
-			}
-		} else {
-			log.Printf("Error getting short URL: %s", err)
-		}
-
 		collection := database.Db.Collection("urls")
 		c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		filter := bson.M{"shortUrl": shortUrl}
 		var result UrlMapping
-		err = collection.FindOne(c, filter).Decode(&result)
+		err := collection.FindOne(c, filter).Decode(&result)
 		if result.LongUrl == "" {
 			return ctx.SendStatus(http.StatusNotFound)
 		} else {
@@ -43,9 +31,6 @@ func RedirectHandler(app *fiber.App) {
 		}
 		if err != nil {
 			log.Printf("Error finding short URL: %s", err)
-		}
-		if longUrlValue == "" {
-			database.RedisClient.Set(context.Background(), shortUrl, result.LongUrl, 24*time.Hour)
 		}
 		updateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
