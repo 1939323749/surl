@@ -29,9 +29,6 @@ try{
     const result=await shorten(url);
     console.log("Shortened URL:");
     console.log(result.result_url);
-
-    await Deno.writeTextFile("shortened.txt",`${result.result_url}->${url}\n`,{append:true});
-    console.log("Shortened URL saved to shortened.txt");
 }catch (e) {
     console.log(e.message);
 }
